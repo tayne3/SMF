@@ -114,8 +114,32 @@ static uint32_t test_value[] = {
 	BIT_MASK(FINAL_VALUE),
 };
 
-/* Forward declaration of test_states */
-static const smf_state_t test_states[];
+enum terminate_action {
+	NONE,
+	PARENT_ENTRY,
+	PARENT_RUN,
+	PARENT_EXIT,
+	ENTRY,
+	RUN,
+	EXIT,
+};
+
+#define B_ENTRY_FIRST_TIME        (1U << 0)
+#define B_RUN_FIRST_TIME          (1U << 1)
+#define PARENT_C_ENTRY_FIRST_TIME (1U << 2)
+#define C_RUN_FIRST_TIME          (1U << 3)
+#define C_ENTRY_FIRST_TIME        (1U << 4)
+#define C_EXIT_FIRST_TIME         (1U << 5)
+
+#define FIRST_TIME_BITS (B_ENTRY_FIRST_TIME | B_RUN_FIRST_TIME | PARENT_C_ENTRY_FIRST_TIME | C_RUN_FIRST_TIME | C_ENTRY_FIRST_TIME | C_EXIT_FIRST_TIME)
+
+/* Test data structure */
+typedef struct {
+	uint32_t              transition_bits;
+	uint32_t              tv_idx;
+	enum terminate_action terminate;
+	uint32_t              first_time;
+} test_data_t;
 
 // F(code, name, describe, ENTRY, RUN, EXIT, PARENT, INITIAL)
 #define STATE_SELF_TRANSITION_FOREACH(F)                                                                                    \
@@ -134,24 +158,39 @@ enum test_state {
 #undef F
 };
 
-enum terminate_action { NONE, PARENT_ENTRY, PARENT_RUN, PARENT_EXIT, ENTRY, RUN, EXIT };
+static void               root_entry(smf_ctx_t *ctx);
+static smf_state_result_t root_run(smf_ctx_t *ctx);
+static void               root_exit(smf_ctx_t *ctx);
 
-#define B_ENTRY_FIRST_TIME        (1U << 0)
-#define B_RUN_FIRST_TIME          (1U << 1)
-#define PARENT_C_ENTRY_FIRST_TIME (1U << 2)
-#define C_RUN_FIRST_TIME          (1U << 3)
-#define C_ENTRY_FIRST_TIME        (1U << 4)
-#define C_EXIT_FIRST_TIME         (1U << 5)
+static void               parent_ab_entry(smf_ctx_t *ctx);
+static smf_state_result_t parent_ab_run(smf_ctx_t *ctx);
+static void               parent_ab_exit(smf_ctx_t *ctx);
 
-#define FIRST_TIME_BITS (B_ENTRY_FIRST_TIME | B_RUN_FIRST_TIME | PARENT_C_ENTRY_FIRST_TIME | C_RUN_FIRST_TIME | C_ENTRY_FIRST_TIME | C_EXIT_FIRST_TIME)
+static void               parent_c_entry(smf_ctx_t *ctx);
+static smf_state_result_t parent_c_run(smf_ctx_t *ctx);
+static void               parent_c_exit(smf_ctx_t *ctx);
 
-/* Test data structure */
-typedef struct {
-	uint32_t              transition_bits;
-	uint32_t              tv_idx;
-	enum terminate_action terminate;
-	uint32_t              first_time;
-} test_data_t;
+static void               state_a_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_a_run(smf_ctx_t *ctx);
+static void               state_a_exit(smf_ctx_t *ctx);
+
+static void               state_b_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_b_run(smf_ctx_t *ctx);
+static void               state_b_exit(smf_ctx_t *ctx);
+
+static void               state_c_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_c_run(smf_ctx_t *ctx);
+static void               state_c_exit(smf_ctx_t *ctx);
+
+static void               state_d_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_d_run(smf_ctx_t *ctx);
+static void               state_d_exit(smf_ctx_t *ctx);
+
+static const smf_state_t test_states[] = {
+#define F(code, name, describe, ENTRY, RUN, EXIT, PARENT, INITIAL) [code] = SMF_CREATE_STATE(ENTRY, RUN, EXIT, PARENT, INITIAL),
+	STATE_SELF_TRANSITION_FOREACH(F)
+#undef F
+};
 
 static void root_entry(smf_ctx_t *ctx) {
 	test_data_t *data = (test_data_t *)smf_get_userdata(ctx);
@@ -424,12 +463,6 @@ static void state_d_exit(smf_ctx_t *ctx) {
 	/* Do nothing */
 	(void)ctx;
 }
-
-static const smf_state_t test_states[] = {
-#define F(code, name, describe, ENTRY, RUN, EXIT, PARENT, INITIAL) [code] = SMF_CREATE_STATE(ENTRY, RUN, EXIT, PARENT, INITIAL),
-	STATE_SELF_TRANSITION_FOREACH(F)
-#undef F
-};
 
 /* ========== Test Cases ========== */
 

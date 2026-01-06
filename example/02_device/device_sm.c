@@ -3,7 +3,44 @@
 #include <stdio.h>
 #include <string.h>
 
-static const smf_state_t state_table[];
+static void device_entry(smf_ctx_t *ctx);
+
+static void off_entry(smf_ctx_t *ctx);
+
+static void               on_entry(smf_ctx_t *ctx);
+static smf_state_result_t on_run(smf_ctx_t *ctx);
+static void               on_exit(smf_ctx_t *ctx);
+
+static void               idle_entry(smf_ctx_t *ctx);
+static smf_state_result_t idle_run(smf_ctx_t *ctx);
+static void               idle_exit(smf_ctx_t *ctx);
+
+static void               working_entry(smf_ctx_t *ctx);
+static smf_state_result_t working_run(smf_ctx_t *ctx);
+static void               working_exit(smf_ctx_t *ctx);
+
+static void               error_entry(smf_ctx_t *ctx);
+static smf_state_result_t error_run(smf_ctx_t *ctx);
+static void               error_exit(smf_ctx_t *ctx);
+
+static const smf_state_t state_table[] = {
+	[DEVICE_STATE_DEVICE]  = SMF_CREATE_STATE(device_entry, SMF_NONE_RUN, SMF_NONE_EXIT, SMF_NONE_PARENT, &state_table[DEVICE_STATE_OFF]),
+	[DEVICE_STATE_OFF]     = SMF_CREATE_STATE(off_entry, SMF_NONE_RUN, SMF_NONE_EXIT, &state_table[DEVICE_STATE_DEVICE], SMF_NONE_INITIAL),
+	[DEVICE_STATE_ON]      = SMF_CREATE_STATE(on_entry, on_run, on_exit, &state_table[DEVICE_STATE_DEVICE], &state_table[DEVICE_STATE_IDLE]),
+	[DEVICE_STATE_IDLE]    = SMF_CREATE_STATE(idle_entry, idle_run, idle_exit, &state_table[DEVICE_STATE_ON], SMF_NONE_INITIAL),
+	[DEVICE_STATE_WORKING] = SMF_CREATE_STATE(working_entry, working_run, working_exit, &state_table[DEVICE_STATE_ON], SMF_NONE_INITIAL),
+	[DEVICE_STATE_ERROR]   = SMF_CREATE_STATE(error_entry, error_run, error_exit, &state_table[DEVICE_STATE_ON], SMF_NONE_INITIAL),
+};
+
+void device_sm_init(smf_ctx_t *ctx, device_data_t *data) {
+	memset(data, 0, sizeof(*data));
+	smf_set_initial(ctx, &state_table[DEVICE_STATE_OFF], data);
+}
+
+int device_sm_set_state(smf_ctx_t *ctx, device_state_t state_id) {
+	if (state_id >= DEVICE_STATE_COUNT) { return -1; }
+	return smf_set_state(ctx, &state_table[state_id]);
+}
 
 /**
  * @brief Entry function for the DEVICE root state
@@ -150,23 +187,4 @@ static void error_exit(smf_ctx_t *ctx) {
 	device_data_t *data = (device_data_t *)smf_get_userdata(ctx);
 	printf("[ERROR] Exit: Resetting error state\n");
 	data->error_occurred = false;
-}
-
-static const smf_state_t state_table[] = {
-	[DEVICE_STATE_DEVICE]  = SMF_CREATE_STATE(device_entry, SMF_NONE_RUN, SMF_NONE_EXIT, SMF_NONE_PARENT, &state_table[DEVICE_STATE_OFF]),
-	[DEVICE_STATE_OFF]     = SMF_CREATE_STATE(off_entry, SMF_NONE_RUN, SMF_NONE_EXIT, &state_table[DEVICE_STATE_DEVICE], SMF_NONE_INITIAL),
-	[DEVICE_STATE_ON]      = SMF_CREATE_STATE(on_entry, on_run, on_exit, &state_table[DEVICE_STATE_DEVICE], &state_table[DEVICE_STATE_IDLE]),
-	[DEVICE_STATE_IDLE]    = SMF_CREATE_STATE(idle_entry, idle_run, idle_exit, &state_table[DEVICE_STATE_ON], SMF_NONE_INITIAL),
-	[DEVICE_STATE_WORKING] = SMF_CREATE_STATE(working_entry, working_run, working_exit, &state_table[DEVICE_STATE_ON], SMF_NONE_INITIAL),
-	[DEVICE_STATE_ERROR]   = SMF_CREATE_STATE(error_entry, error_run, error_exit, &state_table[DEVICE_STATE_ON], SMF_NONE_INITIAL),
-};
-
-void device_sm_init(smf_ctx_t *ctx, device_data_t *data) {
-	memset(data, 0, sizeof(*data));
-	smf_set_initial(ctx, &state_table[DEVICE_STATE_OFF], data);
-}
-
-int device_sm_set_state(smf_ctx_t *ctx, device_state_t state_id) {
-	if (state_id >= DEVICE_STATE_COUNT) { return -1; }
-	return smf_set_state(ctx, &state_table[state_id]);
 }

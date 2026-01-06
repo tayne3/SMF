@@ -79,8 +79,6 @@ typedef struct {
     F(2, IDLE, "Idle State", idle_entry, idle_run, idle_exit, &states[STATE_ON], SMF_NONE_INITIAL) \
     F(3, WORKING, "Working State", working_entry, working_run, working_exit, &states[STATE_ON], SMF_NONE_INITIAL)
 
-static const smf_state_t states[];
-
 static void               off_entry(smf_ctx_t *ctx);
 static smf_state_result_t off_run(smf_ctx_t *ctx);
 

@@ -52,8 +52,19 @@ static uint32_t test_value[] = {
 	0x1ff, /* FINAL VALUE */
 };
 
-/* Forward declaration of test_states */
-static const smf_state_t test_states[];
+enum terminate_action {
+	NONE,
+	ENTRY,
+	RUN,
+	EXIT,
+};
+
+/* Test data structure (separate from smf_ctx_t) */
+typedef struct {
+	uint32_t              transition_bits;
+	uint32_t              tv_idx;
+	enum terminate_action terminate;
+} test_data_t;
 
 // F(code, name, describe, ENTRY, RUN, EXIT, PARENT, INITIAL)
 #define STATE_FLAT_FOREACH(F)                                                                             \
@@ -69,14 +80,27 @@ enum test_state {
 #undef F
 };
 
-enum terminate_action { NONE, ENTRY, RUN, EXIT };
+static void               state_a_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_a_run(smf_ctx_t *ctx);
+static void               state_a_exit(smf_ctx_t *ctx);
 
-/* Test data structure (separate from smf_ctx_t) */
-typedef struct {
-	uint32_t              transition_bits;
-	uint32_t              tv_idx;
-	enum terminate_action terminate;
-} test_data_t;
+static void               state_b_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_b_run(smf_ctx_t *ctx);
+static void               state_b_exit(smf_ctx_t *ctx);
+
+static void               state_c_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_c_run(smf_ctx_t *ctx);
+static void               state_c_exit(smf_ctx_t *ctx);
+
+static void               state_d_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_d_run(smf_ctx_t *ctx);
+static void               state_d_exit(smf_ctx_t *ctx);
+
+static const smf_state_t test_states[] = {
+#define F(code, name, describe, ENTRY, RUN, EXIT, PARENT, INITIAL) [code] = SMF_CREATE_STATE(ENTRY, RUN, EXIT, PARENT, INITIAL),
+	STATE_FLAT_FOREACH(F)
+#undef F
+};
 
 static void state_a_entry(smf_ctx_t *ctx) {
 	test_data_t *data = (test_data_t *)smf_get_userdata(ctx);
@@ -221,12 +245,6 @@ static smf_state_result_t state_d_run(smf_ctx_t *ctx) {
 static void state_d_exit(smf_ctx_t *ctx) {
 	(void)ctx;
 }
-
-static const smf_state_t test_states[] = {
-#define F(code, name, describe, ENTRY, RUN, EXIT, PARENT, INITIAL) [code] = SMF_CREATE_STATE(ENTRY, RUN, EXIT, PARENT, INITIAL),
-	STATE_FLAT_FOREACH(F)
-#undef F
-};
 
 /* ========== Test Cases ========== */
 

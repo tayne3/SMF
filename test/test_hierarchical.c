@@ -70,8 +70,22 @@ static uint32_t test_value[] = {
 	0x3fff, /* FINAL VALUE */
 };
 
-/* Forward declaration of test_states */
-static const smf_state_t test_states[];
+enum terminate_action {
+	NONE,
+	PARENT_ENTRY,
+	PARENT_RUN,
+	PARENT_EXIT,
+	ENTRY,
+	RUN,
+	EXIT,
+};
+
+/* Test data structure */
+typedef struct {
+	uint32_t              transition_bits;
+	uint32_t              tv_idx;
+	enum terminate_action terminate;
+} test_data_t;
 
 // F(code, name, describe, ENTRY, RUN, EXIT, PARENT, INITIAL)
 #define STATE_HIERARCHICAL_FOREACH(F)                                                                               \
@@ -89,22 +103,35 @@ enum test_state {
 #undef F
 };
 
-enum terminate_action {
-	NONE,
-	PARENT_ENTRY,
-	PARENT_RUN,
-	PARENT_EXIT,
-	ENTRY,
-	RUN,
-	EXIT,
-};
+static void               parent_ab_entry(smf_ctx_t *ctx);
+static smf_state_result_t parent_ab_run(smf_ctx_t *ctx);
+static void               parent_ab_exit(smf_ctx_t *ctx);
 
-/* Test data structure */
-typedef struct {
-	uint32_t              transition_bits;
-	uint32_t              tv_idx;
-	enum terminate_action terminate;
-} test_data_t;
+static void               parent_c_entry(smf_ctx_t *ctx);
+static smf_state_result_t parent_c_run(smf_ctx_t *ctx);
+static void               parent_c_exit(smf_ctx_t *ctx);
+
+static void               state_a_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_a_run(smf_ctx_t *ctx);
+static void               state_a_exit(smf_ctx_t *ctx);
+
+static void               state_b_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_b_run(smf_ctx_t *ctx);
+static void               state_b_exit(smf_ctx_t *ctx);
+
+static void               state_c_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_c_run(smf_ctx_t *ctx);
+static void               state_c_exit(smf_ctx_t *ctx);
+
+static void               state_d_entry(smf_ctx_t *ctx);
+static smf_state_result_t state_d_run(smf_ctx_t *ctx);
+static void               state_d_exit(smf_ctx_t *ctx);
+
+static const smf_state_t test_states[] = {
+#define F(code, name, describe, ENTRY, RUN, EXIT, PARENT, INITIAL) [code] = SMF_CREATE_STATE(ENTRY, RUN, EXIT, PARENT, INITIAL),
+	STATE_HIERARCHICAL_FOREACH(F)
+#undef F
+};
 
 static void parent_ab_entry(smf_ctx_t *ctx) {
 	test_data_t *data = (test_data_t *)smf_get_userdata(ctx);
@@ -335,12 +362,6 @@ static void state_d_exit(smf_ctx_t *ctx) {
 	/* Do nothing */
 	(void)ctx;
 }
-
-static const smf_state_t test_states[] = {
-#define F(code, name, describe, ENTRY, RUN, EXIT, PARENT, INITIAL) [code] = SMF_CREATE_STATE(ENTRY, RUN, EXIT, PARENT, INITIAL),
-	STATE_HIERARCHICAL_FOREACH(F)
-#undef F
-};
 
 /* ========== Test Cases ========== */
 

@@ -10,6 +10,12 @@ set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+set(SMF_LIB_TYPE STATIC)
+if(BUILD_SHARED_LIBS)
+  set(SMF_LIB_TYPE SHARED)
+endif()
+message(STATUS "smf v${SMF_VERSION} ${SMF_LIB_TYPE} library")
+
 # This variable is set by project() in CMake 3.21+
 if(NOT DEFINED PROJECT_IS_TOP_LEVEL)
   string(COMPARE EQUAL "${CMAKE_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}" PROJECT_IS_TOP_LEVEL)
@@ -79,6 +85,7 @@ endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   target_compile_options(smf_compile_dependency INTERFACE 
 		"$<$<COMPILE_LANGUAGE:CXX>:/utf-8>"
+		"$<$<COMPILE_LANGUAGE:CXX>:/Zc:__cplusplus>"
 	)
 endif()
 

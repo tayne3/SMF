@@ -1,18 +1,20 @@
 cmake_minimum_required(VERSION 3.14)
 
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/PreventInSourceBuilds.cmake)
+# In-source build guard
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
+  message(
+    FATAL_ERROR
+    "In-source builds are not supported. "
+    "You may need to delete 'CMakeCache.txt' and 'CMakeFiles/' before rebuilding this project."
+  )
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/GitVersion.cmake)
 git_version_info(VERSION SMF_VERSION DEFAULT_VERSION 0.1.0)
 project(smf VERSION ${SMF_VERSION})
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/ProjectConfig.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/CPM.cmake)
-
-set(SMF_LIB_TYPE STATIC)
-if(BUILD_SHARED_LIBS)
-  set(SMF_LIB_TYPE SHARED)
-endif()
-message(STATUS "smf v${SMF_VERSION} ${SMF_LIB_TYPE} library")
 
 add_library(smf ${SMF_LIB_TYPE} src/smf.c)
 add_library(smf::smf ALIAS smf)
